@@ -848,21 +848,44 @@ class _IStat(object):
     # is an existing path (meaning linuxcnc can find it)
     # fname should just be the filename
     # returns the full path or None
-    def check_known_paths(self,fname, prefix = True, sub=True, user_m=True):
+    def check_known_paths(self,fname, prefix = True, sub=True, user_m=True, show=False):
         fname = os.path.split(fname)[1]
+
+        if show:
+            LOG.warning(f'Checking known paths for :{fname}')
+
         if prefix:
-            path = os.path.join(self.PROGRAM_PREFIX,fname)
+            path = os.path.expanduser(os.path.join(self.PROGRAM_PREFIX,fname))
+            if show:
+                LOG.warning(f'Program Prefix: {path}')
             if os.path.exists(path): return path
+        if show:
+            LOG.warning('No Program Prefix path matches in INI')
+
         if sub:
             for i in self.SUB_PATH_LIST:
                 path = os.path.expanduser(os.path.join(i,fname))
+                if show:
+                    LOG.warning(f'Subprogram path: {path}')
                 if os.path.exists(path):
                     return path
+            else:
+                if show:
+                    LOG.warning('No Subprogram path matches in INI')
+
         if user_m:
             for i in self.USER_M_PATH_LIST:
                 path = os.path.expanduser(os.path.join(i,fname))
+                if show:
+                    LOG.warning(f'User M path: {path}')
                 if os.path.exists(path):
                     return path
+            else:
+                if show:
+                    LOG.warning('No User M path matches in INI')
+
+        if show:
+            LOG.error('No known path match found')
         return None
 
     # same as above but just return True or False
