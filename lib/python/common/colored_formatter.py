@@ -51,7 +51,8 @@ MAPPING = {
     'CRITICAL': 'bgred',
 }
 
-
+KEY_SET = set(list(COLORS))
+ 
 # Returns `text` warped in ASCII escape codes to produce `color`
 def COLORIZE(text, color=None):
     seq = COLORS.get(color, 37)  # default to white
@@ -95,21 +96,25 @@ class ColoredFormatter(Formatter):
     # the word or phrase in the terminal log handler.  Also return a cleaned
     # version of the message with the tags removed for use by the file handler.
     def color_words(self, raw_msg):
-        plain_msg = color_msg = raw_msg
-        if '<' in raw_msg:  # If no tag don't try to match
-            iterator = RE.finditer(raw_msg)
-            if iterator:
-                for match in iterator:
-                    group = match.group()
-                    color = match.group(1)
-                    word = match.group(2)
+        # Function to handle color replacement
+        def color_handler(match):
+            group = match.group(0) # The whole thing: <red>hello
+            color = match.group(1) # Group 1: red
+            word = match.group(2)  # Group 2: hello
+        
+            if color in KEY_SET: # must be one of the color key words
+                return COLORIZE(word, color)
+            return word # If color is invalid, just return the word without tags
 
-                    # Could be optimized, but will rarely have more than one match
-                    color_msg = color_msg.replace(group, COLORIZE(word, color))
-                    plain_msg = plain_msg.replace(group, word)
+        # Function to handle plain text (stripping tags)
+        def plain_handler(match):
+            return match.group(2) # Just return the word part
+
+        # Perform both replacements in one pass each
+        color_msg = RE.sub(color_handler, raw_msg)
+        plain_msg = RE.sub(plain_handler, raw_msg)
 
         return plain_msg, color_msg
-
 
 # ----------------------- E X A M P L E -----------------------
 
